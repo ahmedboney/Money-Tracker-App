@@ -1,251 +1,35 @@
-<!DOCTYPE html>
-<html lang="ar">
-<head>
-<meta charset="UTF-8">
-<title>💰 مدير فلوسي</title>
-<style>
-body{
-    font-family: Arial;
-    background:#121212;
-    color:#f1f1f1;
-    text-align:center;
-}
-.container{
-    width:95%;
-    max-width:800px;
-    margin:auto;
-    background:#1e1e1e;
-    padding:20px;
-    border-radius:10px;
-    box-shadow:0 0 15px rgba(0,0,0,0.5);
-}
-h1{margin-bottom:10px;}
-.card-container{
-    display:flex;
-    justify-content:space-around;
-    flex-wrap:wrap;
-    margin-bottom:20px;
-}
-.card{
-    padding:15px;
-    border-radius:10px;
-    width:30%;
-    min-width:150px;
-    margin:5px;
-    box-shadow:0 0 5px rgba(0,0,0,0.5);
-}
-.card.income{background:#27ae60; color:black;}
-.card.expense{background:#c0392b; color:black;}
-.card.balance{background:#2980b9; color:white;}
-input,select,button{
-    padding:10px;
-    margin:5px;
-    width:90%;
-    border:1px solid #555;
-    border-radius:5px;
-    background:#2c2c2c;
-    color:#f1f1f1;
-}
-button{
-    background:#3498db;
-    color:white;
-    cursor:pointer;
-}
-button:hover{background:#2980b9;}
-table{
-    width:100%;
-    margin-top:20px;
-    border-collapse: collapse;
-}
-th,td{
-    border:1px solid #555;
-    padding:8px;
-}
-th{background:#333;}
-.income{color:#2ecc71;}
-.expense{color:#e74c3c;}
-canvas{margin-top:20px; background:#1e1e1e; border-radius:10px;}
-</style>
-</head>
-<body>
-<div class="container">
-<h1>💰 مدير فلوسي</h1>
+# 💰 مدير فلوسي
 
-<div class="card-container">
-<div class="card income">إجمالي الدخل: <span id="totalIncome">0</span></div>
-<div class="card expense">إجمالي المصروف: <span id="totalExpense">0</span></div>
-<div class="card balance">الرصيد الحالي: <span id="balance">0</span></div>
-</div>
+برنامج بسيط لإدارة الدخل والمصروفات اليومية بطريقة سهلة وسريعة.
+تم عمله **لوجه الله ومجاني بالكامل** لمساعدة أي شخص على تنظيم أمواله ومعرفة أين تذهب مصروفاته.
 
-<hr>
-<h3>فلترة العمليات</h3>
-<select id="filterMonth" onchange="show()"><option value="all">كل الشهور</option></select>
-<select id="filterAccount" onchange="show()"><option value="all">كل الحسابات</option></select>
+## ✨ المميزات
 
-<hr>
-<h3>إضافة عملية</h3>
-<select id="type"><option value="income">دخل</option><option value="expense">مصروف</option></select>
-<select id="account"><option value="محفظة">محفظة</option><option value="InstaPay">InstaPay</option><option value="فيزا">فيزا</option></select>
-<input type="number" id="amount" placeholder="المبلغ">
-<input type="text" id="category" placeholder="الفئة">
-<input type="date" id="date">
-<input type="text" id="note" placeholder="ملاحظة">
-<button onclick="addTransaction()">💾 حفظ العملية</button>
+* تسجيل الدخل والمصروفات بسهولة
+* متابعة إجمالي الدخل والمصروف والرصيد الحالي
+* تقسيم العمليات حسب الحساب (محفظة – InstaPay – فيزا)
+* فلترة العمليات حسب الشهر أو الحساب
+* رسم بياني يوضح توزيع المصروفات حسب الفئات
+* حفظ البيانات تلقائيًا على الجهاز باستخدام LocalStorage
 
-<hr>
-<h3>سجل العمليات</h3>
-<table>
-<tr><th>التاريخ</th><th>النوع</th><th>الحساب</th><th>الفئة</th><th>المبلغ</th><th>ملاحظة</th><th>إجراءات</th></tr>
-<tbody id="table"></tbody>
-</table>
+## 📊 كيفية الاستخدام
 
-<hr>
-<h3>توزيع المصروفات حسب الفئة</h3>
-<canvas id="expenseChart" width="400" height="200"></canvas>
-</div>
+1. اختر نوع العملية (دخل أو مصروف).
+2. اختر الحساب.
+3. أدخل المبلغ والفئة والتاريخ.
+4. اضغط على **حفظ العملية**.
+5. ستظهر العملية مباشرة في سجل العمليات.
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-// ======= إعداد Firebase =======
-const firebaseConfig = {
-  apiKey: "API_KEY_HERE",
-  authDomain: "PROJECT_ID.firebaseapp.com",
-  databaseURL: "https://PROJECT_ID.firebaseio.com",
-  projectId: "PROJECT_ID",
-  storageBucket: "PROJECT_ID.appspot.com",
-  messagingSenderId: "SENDER_ID",
-  appId: "APP_ID"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+## 🔒 الخصوصية
 
-// البيانات
-let transactions = [];
+جميع البيانات يتم حفظها **على جهاز المستخدم فقط** داخل المتصفح، ولا يتم إرسال أي بيانات إلى أي خادم.
 
-// جلب البيانات من Firebase أول ما الصفحة تحمل
-db.ref("transactions").on("value", snapshot=>{
-    transactions = snapshot.val()?Object.values(snapshot.val()):[]
-    setupMonths()
-    show()
-})
+## ⚠️ ملاحظة
 
-// إضافة عملية
-function addTransaction(){
-    let type=document.getElementById("type").value
-    let account=document.getElementById("account").value
-    let amount=Number(document.getElementById("amount").value)
-    let category=document.getElementById("category").value
-    let date=document.getElementById("date").value
-    let note=document.getElementById("note").value
-    if(!amount||!date){alert("ادخل المبلغ والتاريخ"); return;}
-    let newTrans = {type,account,amount,category,date,note,id:Date.now()}
-    db.ref("transactions/"+newTrans.id).set(newTrans)
-    document.getElementById("amount").value=""
-    document.getElementById("category").value=""
-    document.getElementById("date").value=""
-    document.getElementById("note").value=""
-}
+إذا تم مسح بيانات المتصفح قد يتم حذف البيانات المحفوظة.
 
-// حذف وتعديل
-function deleteTransaction(id){
-    if(confirm("متأكد تحذف العملية؟")){
-        db.ref("transactions/"+id).remove()
-    }
-}
-function editTransaction(id){
-    let t = transactions.find(tr=>tr.id==id)
-    document.getElementById("type").value=t.type
-    document.getElementById("account").value=t.account
-    document.getElementById("amount").value=t.amount
-    document.getElementById("category").value=t.category
-    document.getElementById("date").value=t.date
-    document.getElementById("note").value=t.note
-    db.ref("transactions/"+id).remove()
-}
+## 🤍 الهدف من المشروع
 
-// إعداد فلتر الشهور
-function setupMonths(){
-    let months = [...new Set(transactions.map(t=>{
-        let d=new Date(t.date)
-        return d.getFullYear()+"-"+(d.getMonth()+1)
-    }))]
-    let filterMonth=document.getElementById("filterMonth")
-    filterMonth.innerHTML='<option value="all">كل الشهور</option>'
-    months.forEach(m=>{
-        let opt=document.createElement("option")
-        opt.value=m; opt.text=m
-        filterMonth.appendChild(opt)
-    })
-}
+مساعدة الناس على تنظيم أموالهم بطريقة بسيطة ومجانية.
 
-// عرض العمليات وحساب الرصيد والدخل والمصروف + فلترة
-function show(){
-    let table="",totalIncome=0,totalExpense=0,balance=0
-    let selectedMonth=document.getElementById("filterMonth").value
-    let selectedAccount=document.getElementById("filterAccount").value
-    let accounts=[...new Set(transactions.map(t=>t.account))]
-    let filterAccount=document.getElementById("filterAccount")
-    filterAccount.innerHTML='<option value="all">كل الحسابات</option>'
-    accounts.forEach(a=>{
-        let opt=document.createElement("option")
-        opt.value=a; opt.text=a
-        filterAccount.appendChild(opt)
-    })
-    transactions.forEach(t=>{
-        let d=new Date(t.date)
-        let monthKey=d.getFullYear()+"-"+(d.getMonth()+1)
-        if((selectedMonth=="all" || monthKey==selectedMonth) && 
-           (selectedAccount=="all" || t.account==selectedAccount)){
-            if(t.type=="income"){totalIncome+=t.amount; balance+=t.amount}
-            else{totalExpense+=t.amount; balance-=t.amount}
-            table+=`<tr>
-<td>${t.date}</td>
-<td class="${t.type}">${t.type=="income"?"دخل":"مصروف"}</td>
-<td>${t.account}</td>
-<td>${t.category}</td>
-<td>${t.amount}</td>
-<td>${t.note}</td>
-<td>
-<button onclick="editTransaction(${t.id})">✏️</button>
-<button onclick="deleteTransaction(${t.id})">🗑</button>
-</td></tr>`
-        }
-    })
-    document.getElementById("table").innerHTML=table
-    document.getElementById("totalIncome").innerText=totalIncome
-    document.getElementById("totalExpense").innerText=totalExpense
-    document.getElementById("balance").innerText=balance
-    updateChart()
-}
-
-// رسم بياني للمصروفات حسب الفئة
-function updateChart(){
-    let ctx=document.getElementById("expenseChart").getContext("2d")
-    let expenseData={}
-    let selectedMonth=document.getElementById("filterMonth").value
-    let selectedAccount=document.getElementById("filterAccount").value
-    transactions.forEach(t=>{
-        let d=new Date(t.date)
-        let monthKey=d.getFullYear()+"-"+(d.getMonth()+1)
-        if(t.type=="expense" && (selectedMonth=="all" || monthKey==selectedMonth) &&
-           (selectedAccount=="all" || t.account==selectedAccount)){
-            expenseData[t.category]=(expenseData[t.category]||0)+t.amount
-        }
-    })
-    let labels=Object.keys(expenseData)
-    let data=Object.values(expenseData)
-    if(window.myChart) window.myChart.destroy()
-    window.myChart=new Chart(ctx,{
-        type:'pie',
-        data:{labels,datasets:[{data, backgroundColor:[
-            '#e74c3c','#f1c40f','#3498db','#9b59b6','#1abc9c','#e67e22','#7f8c8d'
-        ]}]},
-        options:{plugins:{legend:{position:'bottom'}}}
-    })
-}
-</script>
-</body>
-</html>
+نسأل الله أن يكون هذا العمل نافعًا للجميع.
