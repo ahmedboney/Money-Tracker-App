@@ -79,15 +79,26 @@ canvas{margin-top:20px; background:#1e1e1e; border-radius:10px;}
 
 <hr>
 <h3>فلترة العمليات</h3>
-<select id="filterMonth" onchange="show()"><option value="all">كل الشهور</option></select>
-<select id="filterAccount" onchange="show()"><option value="all">كل الحسابات</option></select>
+<select id="filterMonth" onchange="show()">
+<option value="all">كل الشهور</option>
+</select>
+<select id="filterAccount" onchange="show()">
+<option value="all">كل الحسابات</option>
+</select>
 
 <hr>
 <h3>إضافة عملية</h3>
-<select id="type"><option value="income">دخل</option><option value="expense">مصروف</option></select>
-<select id="account"><option value="محفظة">محفظة</option><option value="InstaPay">InstaPay</option><option value="فيزا">فيزا</option></select>
+<select id="type">
+<option value="income">دخل</option>
+<option value="expense">مصروف</option>
+</select>
+<select id="account">
+<option value="محفظة">محفظة</option>
+<option value="InstaPay">InstaPay</option>
+<option value="فيزا">فيزا</option>
+</select>
 <input type="number" id="amount" placeholder="المبلغ">
-<input type="text" id="category" placeholder="الفئة">
+<input type="text" id="category" placeholder="الفئة (أكل - مرتب - مواصلات)">
 <input type="date" id="date">
 <input type="text" id="note" placeholder="ملاحظة">
 <button onclick="addTransaction()">💾 حفظ العملية</button>
@@ -95,7 +106,15 @@ canvas{margin-top:20px; background:#1e1e1e; border-radius:10px;}
 <hr>
 <h3>سجل العمليات</h3>
 <table>
-<tr><th>التاريخ</th><th>النوع</th><th>الحساب</th><th>الفئة</th><th>المبلغ</th><th>ملاحظة</th><th>إجراءات</th></tr>
+<tr>
+<th>التاريخ</th>
+<th>النوع</th>
+<th>الحساب</th>
+<th>الفئة</th>
+<th>المبلغ</th>
+<th>ملاحظة</th>
+<th>إجراءات</th>
+</tr>
 <tbody id="table"></tbody>
 </table>
 
@@ -104,33 +123,27 @@ canvas{margin-top:20px; background:#1e1e1e; border-radius:10px;}
 <canvas id="expenseChart" width="400" height="200"></canvas>
 </div>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// ======= إعداد Firebase =======
-const firebaseConfig = {
-  apiKey: "API_KEY_HERE",
-  authDomain: "PROJECT_ID.firebaseapp.com",
-  databaseURL: "https://PROJECT_ID.firebaseio.com",
-  projectId: "PROJECT_ID",
-  storageBucket: "PROJECT_ID.appspot.com",
-  messagingSenderId: "SENDER_ID",
-  appId: "APP_ID"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-
 // البيانات
-let transactions = [];
+let transactions = JSON.parse(localStorage.getItem("transactions")) || []
 
-// جلب البيانات من Firebase أول ما الصفحة تحمل
-db.ref("transactions").on("value", snapshot=>{
-    transactions = snapshot.val()?Object.values(snapshot.val()):[]
-    setupMonths()
-    show()
-})
+// إعداد فلتر الشهور تلقائي
+function setupMonths(){
+    let months = [...new Set(transactions.map(t=>{
+        let d=new Date(t.date)
+        return d.getFullYear()+"-"+(d.getMonth()+1)
+    }))]
+    let filterMonth=document.getElementById("filterMonth")
+    filterMonth.innerHTML='<option value="all">كل الشهور</option>'
+    months.forEach(m=>{
+        let opt=document.createElement("option")
+        opt.value=m
+        opt.text=m
+        filterMonth.appendChild(opt)
+    })
+}
+setupMonths()
 
 // إضافة عملية
 function addTransaction(){
@@ -141,44 +154,37 @@ function addTransaction(){
     let date=document.getElementById("date").value
     let note=document.getElementById("note").value
     if(!amount||!date){alert("ادخل المبلغ والتاريخ"); return;}
-    let newTrans = {type,account,amount,category,date,note,id:Date.now()}
-    db.ref("transactions/"+newTrans.id).set(newTrans)
+    transactions.push({type,account,amount,category,date,note})
+    localStorage.setItem("transactions",JSON.stringify(transactions))
     document.getElementById("amount").value=""
     document.getElementById("category").value=""
     document.getElementById("date").value=""
     document.getElementById("note").value=""
+    setupMonths()
+    show()
 }
 
-// حذف وتعديل
-function deleteTransaction(id){
-    if(confirm("متأكد تحذف العملية؟")){
-        db.ref("transactions/"+id).remove()
-    }
-}
-function editTransaction(id){
-    let t = transactions.find(tr=>tr.id==id)
+// تعديل وحذف
+function editTransaction(index){
+    let t=transactions[index]
     document.getElementById("type").value=t.type
     document.getElementById("account").value=t.account
     document.getElementById("amount").value=t.amount
     document.getElementById("category").value=t.category
     document.getElementById("date").value=t.date
     document.getElementById("note").value=t.note
-    db.ref("transactions/"+id).remove()
+    transactions.splice(index,1)
+    localStorage.setItem("transactions",JSON.stringify(transactions))
+    setupMonths()
+    show()
 }
-
-// إعداد فلتر الشهور
-function setupMonths(){
-    let months = [...new Set(transactions.map(t=>{
-        let d=new Date(t.date)
-        return d.getFullYear()+"-"+(d.getMonth()+1)
-    }))]
-    let filterMonth=document.getElementById("filterMonth")
-    filterMonth.innerHTML='<option value="all">كل الشهور</option>'
-    months.forEach(m=>{
-        let opt=document.createElement("option")
-        opt.value=m; opt.text=m
-        filterMonth.appendChild(opt)
-    })
+function deleteTransaction(index){
+    if(confirm("متأكد تحذف العملية؟")){
+        transactions.splice(index,1)
+        localStorage.setItem("transactions",JSON.stringify(transactions))
+        setupMonths()
+        show()
+    }
 }
 
 // عرض العمليات وحساب الرصيد والدخل والمصروف + فلترة
@@ -186,21 +192,23 @@ function show(){
     let table="",totalIncome=0,totalExpense=0,balance=0
     let selectedMonth=document.getElementById("filterMonth").value
     let selectedAccount=document.getElementById("filterAccount").value
+    // إعداد فلتر الحسابات
     let accounts=[...new Set(transactions.map(t=>t.account))]
     let filterAccount=document.getElementById("filterAccount")
     filterAccount.innerHTML='<option value="all">كل الحسابات</option>'
     accounts.forEach(a=>{
         let opt=document.createElement("option")
-        opt.value=a; opt.text=a
+        opt.value=a
+        opt.text=a
         filterAccount.appendChild(opt)
     })
-    transactions.forEach(t=>{
+    transactions.forEach((t,index)=>{
         let d=new Date(t.date)
         let monthKey=d.getFullYear()+"-"+(d.getMonth()+1)
         if((selectedMonth=="all" || monthKey==selectedMonth) && 
            (selectedAccount=="all" || t.account==selectedAccount)){
-            if(t.type=="income"){totalIncome+=t.amount; balance+=t.amount}
-            else{totalExpense+=t.amount; balance-=t.amount}
+            if(t.type=="income"){totalIncome+=t.amount;balance+=t.amount;}
+            else{totalExpense+=t.amount;balance-=t.amount;}
             table+=`<tr>
 <td>${t.date}</td>
 <td class="${t.type}">${t.type=="income"?"دخل":"مصروف"}</td>
@@ -209,9 +217,10 @@ function show(){
 <td>${t.amount}</td>
 <td>${t.note}</td>
 <td>
-<button onclick="editTransaction(${t.id})">✏️</button>
-<button onclick="deleteTransaction(${t.id})">🗑</button>
-</td></tr>`
+<button onclick="editTransaction(${index})">✏️</button>
+<button onclick="deleteTransaction(${index})">🗑</button>
+</td>
+</tr>`
         }
     })
     document.getElementById("table").innerHTML=table
@@ -246,6 +255,8 @@ function updateChart(){
         options:{plugins:{legend:{position:'bottom'}}}
     })
 }
+
+show()
 </script>
 </body>
 </html>
